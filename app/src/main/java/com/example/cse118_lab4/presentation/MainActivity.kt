@@ -11,25 +11,20 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
-import android.location.Location
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,12 +35,9 @@ import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
 import androidx.wear.tooling.preview.devices.WearDevices
 import com.example.cse118_lab4.presentation.theme.CSE118Lab4Theme
 
-
-import androidx.activity.compose.setContent
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
@@ -53,12 +45,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.withTransform
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import kotlin.math.max
+
+import java.io.OutputStream
+import java.net.Socket
+import kotlin.concurrent.thread
 
 
 class MainActivity : ComponentActivity(), SensorEventListener {
@@ -67,6 +59,12 @@ class MainActivity : ComponentActivity(), SensorEventListener {
 
     private var heartRateApp by mutableStateOf("Waiting for heart rate...")
     private var heartRate by mutableIntStateOf(0)
+
+    private val serverIP = "192.168.0.225"
+    private val serverPort = 7777
+
+    private var clientSocket: Socket? = null
+    private var outputStream: OutputStream? = null
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -116,6 +114,31 @@ class MainActivity : ComponentActivity(), SensorEventListener {
 
 
 //        setContentView(R.layout.activity_main)
+        connectToServer()
+    }
+
+    private fun connectToServer() {
+        thread {
+            try {
+                clientSocket = Socket(serverIP, serverPort)
+                outputStream = clientSocket?.getOutputStream()
+                Log.d("TCPClient", "Connected to server.")
+            } catch (e: Exception) {
+                Log.e("TCPClient", "Error connecting to server: ${e.message}")
+            }
+        }
+    }
+
+    private fun sendHeartRate(heartRate: Int) {
+        thread {
+            try {
+                outputStream?.write("$heartRate".toByteArray())
+                outputStream?.flush()
+                Log.d("TCPClient", "Sent heart rate: $heartRate")
+            } catch (e: Exception) {
+                Log.e("TCPClient", "Error sending data: ${e.message}")
+            }
+        }
     }
 
 
@@ -137,6 +160,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             heartRate = event.values[0].toInt()
             heartRateApp = "Heart Rate: $heartRate BPM"
             Log.d("HeartRate", "Instantaneous heart rate: $heartRate")
+            sendHeartRate(heartRate)
         }
         else{
             Log.d("HeartRate", "No heart rate sensor available.")
@@ -147,48 +171,16 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         // Handle sensor accuracy changes here if needed
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        // Close socket when the app is destroyed
+        clientSocket?.close()
+    }
 
-
-//    @Composable
-//    fun WearApp() {
-//
-//        CSE118Lab4Theme {
-//            Box(
-//                modifier = Modifier
-//                    .fillMaxSize()
-//                    .background(MaterialTheme.colors.background),
-//                contentAlignment = Alignment.Center
-//            ) {
-//                TimeText()
-//            }
-//        }
-//    }
 
     @Composable
     fun WearApp() {
         CSE118Lab4Theme {
-//            val infiniteTransition = rememberInfiniteTransition(label = "")
-//
-//            val durationMillis = 1800 / max(heartRate, 1)
-//
-//            LaunchedEffect(durationMillis) {
-//                // Log the new durationMillis every time it changes (for debugging purposes)
-//                Log.d("HeartSpeed", "Updated heartRate: $heartRate, durationMillis: $durationMillis")
-//            }
-
-//            val scale by infiniteTransition.animateFloat(
-//                initialValue = 1f,
-//                targetValue = 1.3f,
-//                animationSpec = infiniteRepeatable(
-//                    animation = tween(
-//                        durationMillis = durationMillis, // BPM to duration
-//                        Log.d("HeartSpeed", "Duration: $durationMillis"),
-//                        easing = FastOutSlowInEasing
-//                    ),
-//                    repeatMode = RepeatMode.Reverse
-//                ), label = ""
-//            )
-
             val beatDurationMillis = 40000 / max(heartRate, 1) // Use animateFloatAsState to smoothly transition the scale value
             val scale by animateFloatAsState(
                 targetValue = if (heartRate > 0) 1.3f else 1f, // Scale value based on heart rate
@@ -234,7 +226,6 @@ class MainActivity : ComponentActivity(), SensorEventListener {
 //                            translate(left = size.width / 2, top = size.height / 2)
                             // Apply scaling relative to the center
                             scale(scaleX = scale, scaleY = scale, pivot = Offset.Zero)
-//                            Log.d("HeartSpeed", "scale: $scale")
                         }) {
                             drawPath(
                                 path = heartPath,
@@ -242,14 +233,6 @@ class MainActivity : ComponentActivity(), SensorEventListener {
                                 style = androidx.compose.ui.graphics.drawscope.Fill
                             )
                         }
-
-//                        scale(scaleX = scale, scaleY = scale) {
-//                            drawCircle(
-//                                color = Color.Red,
-//                                radius = size.minDimension / 5, // Ensures the circle fits the canvas
-//                                center = center // Center the circle
-//                            )
-//                        }
                     }
                 }
             }
@@ -257,21 +240,20 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     }
 
     private fun createHeartPath(radius: Float): Path {
-        // Base heart dimensions (relative to radius)
-        val scaleFactor = radius / 50f // 50 is the original base heart size
+        val scaleFactor = radius / 50f
         return Path().apply {
-            moveTo(50f * scaleFactor, 20f * scaleFactor) // Start at the top center
+            moveTo(50f * scaleFactor, 20f * scaleFactor)
             cubicTo(
                 35f * scaleFactor, 0f * scaleFactor,
                 0f * scaleFactor, 25f * scaleFactor,
                 50f * scaleFactor, 70f * scaleFactor
-            ) // Draw the left side curve
+            )
             cubicTo(
                 100f * scaleFactor, 25f * scaleFactor,
                 65f * scaleFactor, 0f * scaleFactor,
                 50f * scaleFactor, 20f * scaleFactor
-            ) // Draw the right side curve
-            close() // Close the path to form a heart
+            )
+            close()
         }
     }
 
