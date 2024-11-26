@@ -219,6 +219,7 @@ GameObject:
   m_Component:
   - component: {fileID: 619595256}
   - component: {fileID: 619595255}
+  - component: {fileID: 619595257}
   m_Layer: 0
   m_Name: Heartrate Controllor
   m_TagString: Untagged
@@ -239,7 +240,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   SkyboxMaterial: {fileID: 2100000, guid: fee1804cd17f06440afff4228a06b6f3, type: 2}
-  Heartrate: 50
 --- !u!4 &619595256
 Transform:
   m_ObjectHideFlags: 0
@@ -255,6 +255,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &619595257
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 619595254}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8def295bf9dcbcd4285e2d2342a246de, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  TestHeartrate: 50
 --- !u!1 &691736788
 GameObject:
   m_ObjectHideFlags: 0
