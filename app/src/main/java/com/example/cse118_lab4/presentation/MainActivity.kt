@@ -46,10 +46,17 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.wear.compose.material.CircularProgressIndicator
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.math.max
 
 import java.io.OutputStream
 import java.net.Socket
+import java.nio.ByteBuffer
 import kotlin.concurrent.thread
 
 
@@ -60,11 +67,14 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     private var heartRateApp by mutableStateOf("Waiting for heart rate...")
     private var heartRate by mutableIntStateOf(0)
 
-    private val serverIP = "192.168.0.225"
+    private val serverIP = "192.168.0.203"
     private val serverPort = 7777
 
     private var clientSocket: Socket? = null
     private var outputStream: OutputStream? = null
+
+    private val minHeartRate = 30f
+    private val maxHeartRate = 125f
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -112,8 +122,6 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         arrayList.forEach { n: String? -> Log.d("SensorNames", n ?: "null") }
 
 
-
-//        setContentView(R.layout.activity_main)
         connectToServer()
     }
 
@@ -132,7 +140,11 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     private fun sendHeartRate(heartRate: Int) {
         thread {
             try {
-                outputStream?.write("$heartRate".toByteArray())
+                val buffer = ByteBuffer.allocate(4)
+                buffer.putInt(heartRate)
+//                outputStream?.write("$heartRate".toByteArray())
+                Log.d("TCPClient", "Byte: ${buffer.array().contentToString()}")
+                outputStream?.write(buffer.array())
                 outputStream?.flush()
                 Log.d("TCPClient", "Sent heart rate: $heartRate")
             } catch (e: Exception) {
@@ -181,7 +193,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     @Composable
     fun WearApp() {
         CSE118Lab4Theme {
-            val beatDurationMillis = 40000 / max(heartRate, 1) // Use animateFloatAsState to smoothly transition the scale value
+            val beatDurationMillis = 60000 / max(heartRate, 1) // Use animateFloatAsState to smoothly transition the scale value
             val scale by animateFloatAsState(
                 targetValue = if (heartRate > 0) 1.3f else 1f, // Scale value based on heart rate
                 animationSpec = infiniteRepeatable(
@@ -194,14 +206,53 @@ class MainActivity : ComponentActivity(), SensorEventListener {
                 ), label = ""
             )
 
+            val waveDurationMillis = (60000L / max(heartRate, 1)) // Convert BPM to milliseconds per cycle
+
+            var phase by remember { mutableStateOf(0f) }
+
+            LaunchedEffect(heartRate) {
+                launch {
+                    while (true) {
+                        phase = (phase + 0.01f) % 1f // Loop the phase from 0 to 1
+                        delay(waveDurationMillis / 100) // Control the speed of the animation based on heart rate
+                    }
+                }
+            }
+
+            var heartRateColor by remember { mutableStateOf(Color.Gray) }
+            val heartRateColorCalculated = heartRateToColor(heartRate)
+            LaunchedEffect(heartRate) {
+                heartRateColor = heartRateColorCalculated
+            }
+
+            val progress = ((heartRate - minHeartRate).toFloat() / (maxHeartRate - minHeartRate)) .coerceIn(0.0f, 1.0f)
+
+            //circle progress indicator
+            Box(
+                modifier = Modifier.fillMaxSize()
+                    .background(MaterialTheme.colors.background)
+                    .graphicsLayer(rotationZ = 180f),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.fillMaxSize().padding(all = 1.dp)
+                        .clearAndSetSemantics {},
+                    startAngle = 340.5f,
+                    endAngle = 200.5f,
+                    indicatorColor = heartRateColor,
+                    progress = progress,
+                    strokeWidth = 8.dp
+                )
+            }
+
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colors.background),
+                    .fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Column(
-                    modifier = Modifier.padding(top = 50.dp),
+                    modifier = Modifier.padding(top = 50.dp)
+                        .align(Alignment.Center),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
@@ -210,34 +261,80 @@ class MainActivity : ComponentActivity(), SensorEventListener {
                         color = MaterialTheme.colors.onBackground
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-//                    TimeText()
+                    //                    TimeText()
 
-                    // Animated Heart
+                    
+                    // Animated Heart and ECG Wave
                     Canvas(
-                        modifier = Modifier.size(150.dp)
+                        modifier = Modifier.size(200.dp)
                     ) {
                         val heartPath = createHeartPath(size.minDimension / 5)
                         withTransform({
-                            val offsetX = -size.width / 8 // Move left by 1/8th of the canvas width
-                            val offsetY = -size.height / 4 // Move up by 1/8th of the canvas height
+                            val offsetX =
+                                -size.width / 8 // Move left by 1/8th of the canvas width
+                            val offsetY =
+                                -size.height / 11 * 5 // Move up by 1/8th of the canvas height
 
-                            translate(left = size.width / 2 + offsetX, top = size.height / 2 + offsetY)
+                            translate(
+                                left = size.width / 2 + offsetX,
+                                top = size.height / 2 + offsetY
+                            )
 
-//                            translate(left = size.width / 2, top = size.height / 2)
                             // Apply scaling relative to the center
                             scale(scaleX = scale, scaleY = scale, pivot = Offset.Zero)
                         }) {
                             drawPath(
                                 path = heartPath,
-                                color = Color.Red,
+                                color = heartRateColor,
                                 style = androidx.compose.ui.graphics.drawscope.Fill
                             )
                         }
+
+
+                        val canvasWidth = size.width
+                        val canvasHeight = size.height
+
+                        // Draw ECG Wave
+                        val waveHeight = canvasHeight * 0.4f // Wave occupies 40% of height
+                        val amplitude = waveHeight / 4
+                        val waveStartY = canvasHeight * 0.7f // Start wave at 70% height
+
+                        val wavePath = Path().apply {
+                            moveTo(0f, waveStartY)
+                            val waveLength = canvasWidth / 4
+                            for (x in 0 until canvasWidth.toInt() step 10) {
+                                val y =
+                                    waveStartY - amplitude * kotlin.math.sin((x + phase * waveLength).toDouble() * (2 * Math.PI / waveLength))
+                                        .toFloat()
+                                lineTo(x.toFloat(), y)
+                            }
+                        }
+                        drawPath(
+                            path = wavePath,
+                            color = heartRateColor,
+                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f)
+                        )
                     }
                 }
             }
         }
     }
+
+    private fun heartRateToColor(heartRate: Int): Color {
+
+        if(heartRate < 50){
+            return Color.Gray
+        }
+
+        val fraction = ((heartRate - minHeartRate).toFloat() / (maxHeartRate - minHeartRate)).coerceIn(0.0f, 1.0f)
+//        val fraction = 0.65f
+        val color1 = lerp(Color.Blue, Color.Red, fraction)
+
+        Log.d("HeartRateColor", "Generated Color (RGB): Hue: $fraction")
+        return color1
+    }
+
+
 
     private fun createHeartPath(radius: Float): Path {
         val scaleFactor = radius / 50f
