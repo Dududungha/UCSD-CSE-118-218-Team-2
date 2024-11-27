@@ -7,7 +7,7 @@ public class HeartrateSimulator : MonoBehaviour
     private HeartrateEventManager heartrateEventManager;
 
     [Range(50f, 200f)]
-    public float TestHeartrate;
+    public int TestHeartrate;
 
     // Start is called before the first frame update
     void Start()

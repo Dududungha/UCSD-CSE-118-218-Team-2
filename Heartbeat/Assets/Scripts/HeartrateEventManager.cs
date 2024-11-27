@@ -3,18 +3,28 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
-public class HeartrateEventManager
+public class HeartrateEventManager : MonoBehaviour
 {
     public static event EventHandler<HeartrateEventArgs> OnHeartrateUpdate;
 
-    private float heartrate;
+    public static int heartrate;
+    public static bool HeartrateIsUpdated = false;
 
     public void UpdateHeartrate(HeartrateEventArgs e) {
         heartrate = e.heartrate;
         OnHeartrateUpdate?.Invoke(this, e);
     }
+
+    void Update() {
+        if (HeartrateIsUpdated) {
+            HeartrateEventArgs args = new HeartrateEventArgs();
+            args.heartrate = heartrate;
+            UpdateHeartrate(args);
+            HeartrateIsUpdated = false;
+        }
+    }
 }
 
 public class HeartrateEventArgs : EventArgs {
-    public float heartrate { get; set; }
+    public int heartrate { get; set; }
 }
