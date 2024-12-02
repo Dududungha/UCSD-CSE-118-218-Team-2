@@ -31,3 +31,42 @@ will be for the monster to find you.
 Quotes:
 1. Only when we are no longer afraid, do we begin to live.
 2. The only thing we have to fear is fear itself.
+
+-------------------------------------------------
+
+Gameplay
+
+Player starts at a campfire/light. A safe place.
+
+On a look around, player sees eyes staring back through the darkness (some other creature). The player hears growling, and sniffing, stomping
+but the creature or thing making those sounds seem to never approach the campfire. The campfire is slowly dying out. 
+
+A light in the distance shines brightly.
+
+A torch lies unlit by the campfire.
+
+Does the player risk leaving the campfire for the light? Or do they stay where it's safe?
+
+The player moves towards the light, torch in hand, warding away the darkness.
+
+They take one step at a time, listening to the sniffing, growling, stomping circling them. The campfire grows ever dimmer as the player
+walks farther and farther. 
+
+The torch runs out and the darkness envelopes the player. Their heart begins pounding. The light in the distance seems to be closer.
+
+The player makes a mad dash towards the light.
+
+Upon smelling the spike in fear, the monster roars and sprints after the player. Of course, there is no outrunning fear. It always
+catches up.
+
+The player dies. Their first attempt.
+
+This time, the player takes it slow. 
+
+They try to control their fear as the monster prowls around them, unsure of where the player is.
+
+Slowly but surely, the player makes their way towards the light.
+
+It's beautiful.
+
+They reach out, and as soon as their hand touches the light, the world lights up.
