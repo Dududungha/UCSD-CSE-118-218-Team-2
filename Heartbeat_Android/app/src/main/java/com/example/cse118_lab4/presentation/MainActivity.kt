@@ -121,6 +121,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
 
         arrayList.forEach { n: String? -> Log.d("SensorNames", n ?: "null") }
 
+        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         connectToServer()
     }
