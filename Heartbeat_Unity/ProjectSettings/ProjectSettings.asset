@@ -47,7 +47,7 @@ PlayerSettings:
   defaultScreenWidthWeb: 960
   defaultScreenHeightWeb: 600
   m_StereoRenderingPath: 0
-  m_ActiveColorSpace: 0
+  m_ActiveColorSpace: 1
   unsupportedMSAAFallback: 0
   m_SpriteBatchVertexThreshold: 300
   m_MTRendering: 1
@@ -163,7 +163,6 @@ PlayerSettings:
   androidMaxAspectRatio: 2.1
   applicationIdentifier:
     Android: com.DefaultCompany.Heartbeat
-    Standalone: com.DefaultCompany.Heartbeat
   buildNumber:
     Standalone: 0
     VisionOS: 0
