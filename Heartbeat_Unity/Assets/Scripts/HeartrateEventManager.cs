@@ -11,8 +11,10 @@ public class HeartrateEventManager : MonoBehaviour
     public static bool HeartrateIsUpdated = false;
 
     public void UpdateHeartrate(HeartrateEventArgs e) {
-        heartrate = e.heartrate;
-        OnHeartrateUpdate?.Invoke(this, e);
+        if (e.heartrate != 0) {
+            heartrate = e.heartrate;
+            OnHeartrateUpdate?.Invoke(this, e);
+        }
     }
 
     void Update() {

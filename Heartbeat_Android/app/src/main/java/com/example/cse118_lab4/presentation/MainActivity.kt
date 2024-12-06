@@ -67,7 +67,8 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     private var heartRateApp by mutableStateOf("Waiting for heart rate...")
     private var heartRate by mutableIntStateOf(0)
 
-    private val serverIP = "192.168.0.203"
+    private val serverIP = "192.168.0.203" // For 3215_5G
+//    private val serverIP = "192.168.1.227"
     private val serverPort = 7777
 
     private var clientSocket: Socket? = null
