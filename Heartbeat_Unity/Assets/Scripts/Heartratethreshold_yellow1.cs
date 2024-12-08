@@ -38,7 +38,7 @@ public class heartratethreshold_yellow1 : MonoBehaviour
         if(!pause){
             timer += Time.deltaTime;
 
-            if (timer >= 2f){
+            if (timer >= 5f){
               particleSystem.Pause();
               pause = true;
             }
@@ -90,7 +90,7 @@ public class heartratethreshold_yellow1 : MonoBehaviour
             float timer1 = 0f;
             timer1 += Time.deltaTime;
 
-            if (timer1 >= 2f){
+            if (timer1 >= 5f){
               particleSystem.Pause();
             }
         }

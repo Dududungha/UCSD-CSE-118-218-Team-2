@@ -40,7 +40,7 @@ public class heartratethreshold_green : MonoBehaviour
 
         currentHeartrate = HeartrateEventManager.heartrate;
 
-        if (currentHeartrate >= triggerThreshold && !isParticlePlaying)
+        if (currentHeartrate >= triggerThreshold && currentHeartrate < 100 && !isParticlePlaying)
         {
             ActivateParticleSystem();
         }

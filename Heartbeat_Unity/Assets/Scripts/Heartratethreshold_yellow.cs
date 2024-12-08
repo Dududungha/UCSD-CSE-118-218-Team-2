@@ -21,7 +21,11 @@ public class heartratethreshold_yellow : MonoBehaviour
         particleMain = particleSystem.main;
         originalColor = particleMain.startColor.color;
 
+        Debug.Log($"Color orginal for {gameObject.name}: "+particleMain.startColor.color);
+
         particleMain.startColor = Color.gray;
+
+        Debug.Log($"Color gray after? for {gameObject.name} "+particleMain.startColor.color);
 
         particleSystem.Play();
     }
@@ -32,7 +36,9 @@ public class heartratethreshold_yellow : MonoBehaviour
         if(!pause){
             timer += Time.deltaTime;
 
-            if (timer >= 2f){
+            if (timer >= 5f){
+              Debug.Log($"particle paused for {gameObject.name} ");
+              Debug.Log($"Color when paused for {gameObject.name} "+particleMain.startColor.color);
               particleSystem.Pause();
               pause = true;
             }
@@ -40,7 +46,7 @@ public class heartratethreshold_yellow : MonoBehaviour
 
         currentHeartrate = HeartrateEventManager.heartrate;
 
-        if (currentHeartrate >= triggerThreshold && !isParticlePlaying)
+        if (currentHeartrate >= triggerThreshold && currentHeartrate < 120 &&  !isParticlePlaying)
         {
             ActivateParticleSystem();
         }
@@ -74,8 +80,9 @@ public class heartratethreshold_yellow : MonoBehaviour
             float timer1 = 0f;
             timer1 += Time.deltaTime;
 
-            if (timer1 >= 2f){
+            if (timer1 >= 5f){
               particleSystem.Pause();
+              Debug.Log($"Color in deact when paused for {gameObject.name} "+particleMain.startColor.color);
             }
         }
     }
