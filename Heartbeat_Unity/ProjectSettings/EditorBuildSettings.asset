@@ -9,8 +9,8 @@ EditorBuildSettings:
     path: Assets/Scenes/Main Scene.unity
     guid: 9fc0d4010bbf28b4594072e72b8655ab
   - enabled: 1
-    path: Assets/Scenes/Scary.unity
-    guid: d881824cbf26ae64881ff2b343a25c63
+    path: Assets/Scenes/Excitement.unity
+    guid: 5e8b885b81a9940c48e56529b2a3c16f
   m_configObjects:
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 8bd38af15676780409999ab24b32ab6b, type: 2}
     com.unity.xr.openxr.settings4: {fileID: 11400000, guid: ebdb5095f4d00b94e8b41f0e8efc969d, type: 2}
