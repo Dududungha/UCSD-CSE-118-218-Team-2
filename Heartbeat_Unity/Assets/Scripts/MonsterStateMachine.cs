@@ -6,7 +6,11 @@ public class MonsterStateMachine : MonoBehaviour
 {
     public GameObject Monster;
     public Animator animator;
+    public Animator animator_lod;
     public Transform Target;
+    public AudioSource StepSound;
+    public AudioSource SniffSound;
+    public AudioSource RoarSound;
 
     public float SearchRange;
     public float Speed;
@@ -22,6 +26,7 @@ public class MonsterStateMachine : MonoBehaviour
         Stalk,
         Search,
         Detect,
+        Roar,
         Chase,
         Catch
     }
@@ -35,6 +40,7 @@ public class MonsterStateMachine : MonoBehaviour
     void Start()
     {
         animator.Play("Idle");
+        animator_lod.Play("Idle");
         HeartrateEventManager.OnHeartrateUpdate += SetHeartrate;
     }
 
@@ -68,6 +74,9 @@ public class MonsterStateMachine : MonoBehaviour
             case State.Chase:
                 currentState = ChaseState();
                 break;
+            case State.Roar:
+                currentState = RoarState();
+                break;
             default:
                 break;
         }
@@ -77,7 +86,7 @@ public class MonsterStateMachine : MonoBehaviour
         Debug.Log("Idle");
 
         if (setStateDuration) {
-            stateDuration = Random.Range(2f, 5f);
+            stateDuration = Random.Range(2f, 3f);
             setStateDuration = false;
         }
 
@@ -89,9 +98,11 @@ public class MonsterStateMachine : MonoBehaviour
 
             if (DirectionToTarget.magnitude > SearchRange) {
                 animator.CrossFade("Stalk", 0.1f);
+                animator_lod.CrossFade("Stalk", 0.1f);
                 return State.Stalk;
             } else {
                 animator.CrossFade("Search", 0.1f);
+                animator_lod.CrossFade("Search", 0.1f);
                 return State.Search;
             }
         }
@@ -102,8 +113,10 @@ public class MonsterStateMachine : MonoBehaviour
         Debug.Log("Stalk");
 
         if (setStateDuration) {
-            stateDuration = Random.Range(2f, 5f);
+            stateDuration = Random.Range(5f, 7f);
             setStateDuration = false;
+            RandomDirection = DirectionToTarget + new Vector3(Random.Range(-8f, 8f), 0f, 0f);
+            StepSound.Play();
         }
 
         elapsedStateTime += Time.deltaTime;
@@ -111,19 +124,22 @@ public class MonsterStateMachine : MonoBehaviour
         // animator.Play("Stalk");
 
         // move towards the player
-        Quaternion targetRotation = Quaternion.LookRotation(DirectionToTarget);
+        Quaternion targetRotation = Quaternion.LookRotation(RandomDirection);
         Monster.transform.rotation = Quaternion.Slerp(Monster.transform.rotation, targetRotation, elapsedStateTime / 2);
-        Monster.transform.position += DirectionToTarget.normalized * Time.deltaTime * Speed;
+        Monster.transform.position += RandomDirection.normalized * Time.deltaTime * Speed * 2f;
 
         if (elapsedStateTime >= stateDuration) {
             setStateDuration = true;
             elapsedStateTime = 0f;
+            StepSound.Stop();
 
             if (DirectionToTarget.magnitude > SearchRange) {
                 animator.CrossFade("Idle", 0.1f);
+                animator_lod.CrossFade("Idle", 0.1f);
                 return State.Idle;
             } else {
                 animator.CrossFade("Detect", 0.1f);
+                animator_lod.CrossFade("Detect", 0.1f);
                 return State.Detect;
             }
         }
@@ -135,8 +151,9 @@ public class MonsterStateMachine : MonoBehaviour
         Debug.Log("Search");
 
         if (setStateDuration) {
-            stateDuration = Random.Range(2f, 5f);
+            stateDuration = Random.Range(2f, 4f);
             setStateDuration = false;
+            StepSound.Play();
             SetRandomDirection();
         }
 
@@ -150,12 +167,15 @@ public class MonsterStateMachine : MonoBehaviour
         if (elapsedStateTime >= stateDuration) {
             setStateDuration = true;
             elapsedStateTime = 0f;
+            StepSound.Stop();
 
             if (DirectionToTarget.magnitude > SearchRange) {
                 animator.CrossFade("Idle", 0.1f);
+                animator_lod.CrossFade("Idle", 0.1f);
                 return State.Idle;
             } else {
                 animator.CrossFade("Detect", 0.1f);
+                animator_lod.CrossFade("Detect", 0.1f);
                 return State.Detect;
             }
         }
@@ -169,6 +189,7 @@ public class MonsterStateMachine : MonoBehaviour
         if (setStateDuration) {
             stateDuration = 4.84f;
             setStateDuration = false;
+            SniffSound.Play();
         }
 
         elapsedStateTime += Time.deltaTime;
@@ -178,20 +199,50 @@ public class MonsterStateMachine : MonoBehaviour
             elapsedStateTime = 0f;
 
             if (heartrate > ScaredHeartrate) {
-                animator.CrossFade("Chase", 0.1f);
-                return State.Chase;
+                animator.CrossFade("Roar", 0.2f);
+                animator_lod.CrossFade("Roar", 0.2f);
+                return State.Roar;
             } else {
                 if (DirectionToTarget.magnitude > SearchRange) {
                     animator.CrossFade("Stalk", 0.1f);
+                    animator_lod.CrossFade("Stalk", 0.1f);
                     return State.Stalk;
                 } else {
                     animator.CrossFade("Search", 0.1f);
+                    animator_lod.CrossFade("Search", 0.1f);
                     return State.Search;
                 }
             }
         }
 
         return State.Detect;
+    }
+
+    private State RoarState() {
+        Debug.Log("Roar");
+
+        if (setStateDuration) {
+            stateDuration = 5f;
+            RoarSound.Play();
+            setStateDuration = false;
+        }
+
+        elapsedStateTime += Time.deltaTime;
+
+        Quaternion targetRotation = Quaternion.LookRotation(DirectionToTarget);
+        Monster.transform.rotation = Quaternion.Slerp(Monster.transform.rotation, targetRotation, elapsedStateTime);
+
+        if (elapsedStateTime >= stateDuration) {
+            setStateDuration = true;
+            elapsedStateTime = 0;
+
+            animator.CrossFade("Chase", 0.1f);
+            animator_lod.CrossFade("Chase", 0.1f);
+
+            return State.Chase;
+        }
+
+        return State.Roar;
     }
 
     private State ChaseState() {
@@ -205,6 +256,7 @@ public class MonsterStateMachine : MonoBehaviour
             setStateDuration = true;
             elapsedStateTime = 0f;
             animator.CrossFade("Detect", 0.1f);
+            animator_lod.CrossFade("Detect", 0.1f);
             return State.Detect;
         }
 
